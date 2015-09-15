@@ -153,7 +153,8 @@ prison_restrict_ip4(struct prison *pr, struct in_addr *newip4)
 				continue;
 			}
 			switch (ij >= ppr->pr_ip4s ? -1 :
-				prison_qcmp_v4(&pr->pr_ip4[ii], &ppr->pr_ip4[ij])) {
+				prison_qcmp_v4(&pr->pr_ip4[ii],
+				    &ppr->pr_ip4[ij])) {
 			case -1:
 				bcopy(pr->pr_ip4 + ii + 1, pr->pr_ip4 + ii,
 				    (--pr->pr_ip4s - ii) * sizeof(*pr->pr_ip4));
