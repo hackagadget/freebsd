@@ -512,6 +512,8 @@ void	rib_free_info(struct rt_addrinfo *info);
 
 int	 rtsosetfib(struct socket *, struct sockopt *);
 
+int	 rtsosetfib(struct socket *, struct sockopt *);
+
 #include <sys/eventhandler.h>
 typedef void (*rtevent_redirect_fn)(void *, struct rtentry *, struct rtentry *, struct sockaddr *);
 EVENTHANDLER_DECLARE(route_redirect_event, rtevent_redirect_fn);
