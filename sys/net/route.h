@@ -120,6 +120,9 @@ VNET_DECLARE(u_int, rt_add_addr_allfibs); /* Announce interfaces to all fibs */
 #define	V_rt_add_addr_allfibs	VNET(rt_add_addr_allfibs)
 #endif
 
+struct socket;
+struct sockopt;
+
 /*
  * We distinguish between routes to hosts and routes to networks,
  * preferring the former if available.  For each route we infer
@@ -438,6 +441,11 @@ struct rt_addrinfo {
 	}								\
 } while (0)
 
+#define	RT_SOSETFIB(_so, _sopt)					\
+	(((_sopt)->sopt_level == SOL_SOCKET &&			\
+	    (_sopt)->sopt_name == SO_SETFIB) ?			\
+	    rtsosetfib((_so), (_sopt)) : ENOPROTOOPT)
+
 struct ifmultiaddr;
 struct rib_head;
 
@@ -502,6 +510,11 @@ int	rib_lookup_info(uint32_t, const struct sockaddr *, uint32_t, uint32_t,
 	    struct rt_addrinfo *);
 void	rib_free_info(struct rt_addrinfo *info);
 
+int	 rtsosetfib(struct socket *, struct sockopt *);
+
+#include <sys/eventhandler.h>
+typedef void (*rtevent_redirect_fn)(void *, struct rtentry *, struct rtentry *, struct sockaddr *);
+EVENTHANDLER_DECLARE(route_redirect_event, rtevent_redirect_fn);
 #endif
 
 #endif

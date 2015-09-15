@@ -1458,10 +1458,15 @@ ip6_ctloutput(struct socket *so, struct sockopt *sopt)
 				error = 0;
 				break;
 			case SO_SETFIB:
-				INP_WLOCK(in6p);
-				in6p->inp_inc.inc_fibnum = so->so_fibnum;
-				INP_WUNLOCK(in6p);
-				error = 0;
+				error = RT_SOSETFIB(so, sopt);
+				if (error == 0) {
+					INP_WLOCK(in6p);
+					in6p->inp_inc.inc_fibnum =
+					    so->so_fibnum;
+					INP_WUNLOCK(in6p);
+				}
+				if (error == ENOPROTOOPT)
+					error = 0;
 				break;
 			case SO_MAX_PACING_RATE:
 #ifdef RATELIMIT

@@ -51,6 +51,9 @@
 #include <sys/syslog.h>
 #include <sys/sysproto.h>
 #include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/syscall.h>
+#include <sys/sysent.h>
 #include <sys/domain.h>
 #include <sys/kernel.h>
 
@@ -168,6 +171,11 @@ static struct socket_iocgroup rtiocgroup = {
 };
 SO_IOCGROUP_SET(rt);
 
+static struct syscall_helper_data route_syscalls[] = {
+	SYSCALL_INIT_HELPER(setfib),
+	SYSCALL_INIT_LAST
+};
+
 /*
  * handler for net.my_fibnum
  */
@@ -229,6 +237,13 @@ rt_tables_get_gen(int table, int fam)
 static void
 route_init(void)
 {
+	int error;
+
+	/* register the "setfib" syscall */
+	error = syscall_helper_register(route_syscalls, SY_THR_STATIC);
+	KASSERT((error == 0),
+	    ("%s: syscall_helper_register failed for route syscalls",
+	    __func__));
 
 	/* whack the tunable ints into  line. */
 	if (rt_numfibs > RT_MAXFIBS)
@@ -2335,3 +2350,26 @@ rt_newaddrmsg_fib(int cmd, struct ifaddr *ifa, int error, struct rtentry *rt,
 	}
 }
 
+int
+rtsosetfib(struct socket *so, struct sockopt *sopt)
+{
+	int error, optval;
+
+	if (sopt->sopt_level != SOL_SOCKET ||
+	    sopt->sopt_name != SO_SETFIB)
+		return (ENOPROTOOPT);
+
+	error = sooptcopyin(sopt, &optval, sizeof optval, sizeof optval);
+	if (error)
+		return (error);
+	if (optval < 0 || optval >= rt_numfibs)
+		return (error);
+
+	if (so->so_proto->pr_domain->dom_family == PF_INET ||
+	    so->so_proto->pr_domain->dom_family == PF_INET6 ||
+	    so->so_proto->pr_domain->dom_family == PF_ROUTE)
+		so->so_fibnum = optval;
+	else
+		so->so_fibnum = 0;
+	return (0);
+}
