@@ -1,6 +1,6 @@
 #
 # GENERIC-NONET -- NETSTACK free kernel configuration file 
-#		   for FreeBSD/amd64
+#                  for FreeBSD/amd64
 #
 # For more information on this file, please read the config(5) manual page,
 # and/or the handbook section on Kernel Configuration Files:
@@ -89,12 +89,6 @@ nodevice		wlan_wep
 nodevice		wpi
 nodevice		xl
 
-nooptions 	AH_AR5416_INTERRUPT_MITIGATION
-nooptions 	AH_SUPPORT_AR5416
-nooptions 	ATH_ENABLE_11N
-nooptions 	IEEE80211_AMPDU_AGE
-nooptions 	IEEE80211_DEBUG
-nooptions 	IEEE80211_SUPPORT_MESH
 nooptions 	INET
 nooptions 	INET6
 nooptions 	IPSEC
@@ -102,6 +96,4 @@ nooptions 	NETSTACK
 nooptions 	NFSCL
 nooptions 	NFSD
 nooptions 	NFSLOCKD
-nooptions 	NFS_ROOT
 nooptions 	SCTP
-nooptions 	TCP_OFFLOAD
