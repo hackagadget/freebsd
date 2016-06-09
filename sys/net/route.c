@@ -47,6 +47,7 @@
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
+#include <sys/sockopt.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <sys/sysproto.h>
