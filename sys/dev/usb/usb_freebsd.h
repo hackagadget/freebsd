@@ -42,7 +42,11 @@
 #define	USB_HAVE_POWERD 1
 #define	USB_HAVE_MSCTEST 1
 #define	USB_HAVE_MSCTEST_DETACH 1
+#ifdef NETSTACK
 #define	USB_HAVE_PF 1
+#else
+#define	USB_HAVE_PF 0
+#endif /* NETSTACK */
 #define	USB_HAVE_ROOT_MOUNT_HOLD 1
 #define	USB_HAVE_ID_SECTION 1
 #define	USB_HAVE_PER_BUS_PROCESS 1

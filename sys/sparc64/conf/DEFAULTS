@@ -21,3 +21,6 @@ options 	GEOM_PART_VTOC8
 options 	SUNKBD_EMULATE_ATKBD
 
 options 	NEW_PCIB
+
+# Enable network stack functionality
+options 	NETSTACK

@@ -11,3 +11,6 @@ device		mem		# Memory and kernel memory devices
 # Default partitioning schemes
 options 	GEOM_PART_BSD
 options 	GEOM_PART_MBR
+
+# Enable network stack functionality
+options 	NETSTACK

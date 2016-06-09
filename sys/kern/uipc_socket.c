@@ -2570,6 +2570,7 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			SOCK_UNLOCK(so);
 			break;
 
+#ifdef NETSTACK
 		case SO_SETFIB:
 			/* Let the protocol-specific ctloutput handle it */
 			if (so->so_proto->pr_ctloutput != NULL) {
@@ -2579,6 +2580,7 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			}
 			error = ENOPROTOOPT;
 			break;
+#endif /* NETSTACK */
 
 		case SO_USER_COOKIE:
 			error = sooptcopyin(sopt, &val32, sizeof val32,

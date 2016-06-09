@@ -100,7 +100,9 @@ static linux_ioctl_function_t linux_ioctl_vfat;
 static linux_ioctl_function_t linux_ioctl_console;
 static linux_ioctl_function_t linux_ioctl_hdio;
 static linux_ioctl_function_t linux_ioctl_disk;
+#ifdef NETSTACK
 static linux_ioctl_function_t linux_ioctl_socket;
+#endif /* NETSTACK */
 static linux_ioctl_function_t linux_ioctl_sound;
 static linux_ioctl_function_t linux_ioctl_termio;
 static linux_ioctl_function_t linux_ioctl_private;
@@ -121,8 +123,10 @@ static struct linux_ioctl_handler hdio_handler =
 { linux_ioctl_hdio, LINUX_IOCTL_HDIO_MIN, LINUX_IOCTL_HDIO_MAX };
 static struct linux_ioctl_handler disk_handler =
 { linux_ioctl_disk, LINUX_IOCTL_DISK_MIN, LINUX_IOCTL_DISK_MAX };
+#ifdef NETSTACK
 static struct linux_ioctl_handler socket_handler =
 { linux_ioctl_socket, LINUX_IOCTL_SOCKET_MIN, LINUX_IOCTL_SOCKET_MAX };
+#endif /* NETSTACK */
 static struct linux_ioctl_handler sound_handler =
 { linux_ioctl_sound, LINUX_IOCTL_SOUND_MIN, LINUX_IOCTL_SOUND_MAX };
 static struct linux_ioctl_handler termio_handler =
@@ -145,7 +149,9 @@ DATA_SET(linux_ioctl_handler_set, vfat_handler);
 DATA_SET(linux_ioctl_handler_set, console_handler);
 DATA_SET(linux_ioctl_handler_set, hdio_handler);
 DATA_SET(linux_ioctl_handler_set, disk_handler);
+#ifdef NETSTACK
 DATA_SET(linux_ioctl_handler_set, socket_handler);
+#endif /* NETSTACK */
 DATA_SET(linux_ioctl_handler_set, sound_handler);
 DATA_SET(linux_ioctl_handler_set, termio_handler);
 DATA_SET(linux_ioctl_handler_set, private_handler);
@@ -2116,6 +2122,7 @@ linux_ioctl_console(struct thread *td, struct linux_ioctl_args *args)
 	return (error);
 }
 
+#ifdef NETSTACK
 /*
  * Criteria for interface name translation
  */
@@ -2634,6 +2641,7 @@ linux_ioctl_socket(struct thread *td, struct linux_ioctl_args *args)
 #endif
 	return (error);
 }
+#endif /* NETSTACK */
 
 /*
  * Device private ioctl handler
@@ -2650,8 +2658,10 @@ linux_ioctl_private(struct thread *td, struct linux_ioctl_args *args)
 		return (error);
 	type = fp->f_type;
 	fdrop(fp, td);
+#ifdef NETSTACK
 	if (type == DTYPE_SOCKET)
 		return (linux_ioctl_socket(td, args));
+#endif /* NETSTACK */
 	return (ENOIOCTL);
 }
 
@@ -3152,6 +3162,7 @@ linux_ioctl_v4l(struct thread *td, struct linux_ioctl_args *args)
 	return (error);
 }
 
+#ifdef NETSTACK
 /*
  * Special ioctl handler
  */
@@ -3179,6 +3190,7 @@ linux_ioctl_special(struct thread *td, struct linux_ioctl_args *args)
 
 	return (error);
 }
+#endif /* NETSTACK */
 
 static int
 linux_to_bsd_v4l2_standard(struct l_v4l2_standard *lvstd, struct v4l2_standard *vstd)

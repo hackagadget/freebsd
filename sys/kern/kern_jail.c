@@ -61,10 +61,12 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/vnode.h>
 
+#ifdef NETSTACK
 #include <net/if.h>
 #include <net/vnet.h>
 
 #include <netinet/in.h>
+#endif /* NETSTACK */
 
 #ifdef DDB
 #include <ddb/ddb.h>

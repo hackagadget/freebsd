@@ -26,3 +26,6 @@ options 	GEOM_PART_MBR
 device		atpic
 
 options 	NEW_PCIB
+
+# Enable network stack functionality
+options 	NETSTACK

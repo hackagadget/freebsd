@@ -887,10 +887,15 @@ vfs_domount_update(
 	struct vfsoptlist **optlist	/* Options local to the filesystem. */
 	)
 {
+#ifdef NETSTACK
 	struct export_args export;
 	void *bufp;
+#endif /* NETSTACK */
 	struct mount *mp;
-	int error, export_error, len;
+	int error;
+#ifdef NETSTACK
+	int export_error, len;
+#endif /* NETSTACK */
 	uint64_t flag;
 
 	ASSERT_VOP_ELOCKED(vp, __func__);
@@ -898,10 +903,12 @@ vfs_domount_update(
 	mp = vp->v_mount;
 
 	if ((vp->v_vflag & VV_ROOT) == 0) {
+#ifdef NETSTACK
 		if (vfs_copyopt(*optlist, "export", &export, sizeof(export))
 		    == 0)
 			error = EXDEV;
 		else
+#endif /* NETSTACK */
 			error = EINVAL;
 		vput(vp);
 		return (error);
@@ -962,6 +969,7 @@ vfs_domount_update(
 	 */
 	error = VFS_MOUNT(mp);
 
+#ifdef NETSTACK
 	export_error = 0;
 	/* Process the export option. */
 	if (error == 0 && vfs_getopt(mp->mnt_optnew, "export", &bufp,
@@ -980,6 +988,7 @@ vfs_domount_update(
 			break;
 		}
 	}
+#endif /* NETSTACK */
 
 	MNT_ILOCK(mp);
 	if (error == 0) {
@@ -1026,7 +1035,11 @@ end:
 	vp->v_iflag &= ~VI_MOUNT;
 	VI_UNLOCK(vp);
 	vrele(vp);
+#ifdef NETSTACK
 	return (error != 0 ? error : export_error);
+#else
+	return (error);
+#endif
 }
 
 /*
@@ -1346,8 +1359,10 @@ dounmount(struct mount *mp, int flags, struct thread *td)
 	    ("%s: invalid return value for msleep in the drain path @ %s:%d",
 	    __func__, __FILE__, __LINE__));
 
+#ifdef NETSTACK
 	if (mp->mnt_flag & MNT_EXPUBLIC)
 		vfs_setpublicfs(NULL, NULL, NULL);
+#endif /* NETSTACK */
 
 	/*
 	 * From now, we can claim that the use reference on the

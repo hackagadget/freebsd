@@ -260,9 +260,11 @@ vfs_register(struct vfsconf *vfc)
 	if (vfsops->vfs_fhtovp == NULL)
 		/* turn an NFS file handle into a vnode */
 		vfsops->vfs_fhtovp =	vfs_stdfhtovp;
+#ifdef NETSTACK
 	if (vfsops->vfs_checkexp == NULL)
 		/* check if file system is exported */
 		vfsops->vfs_checkexp =	vfs_stdcheckexp;
+#endif
 	if (vfsops->vfs_init == NULL)
 		/* file system specific initialisation */
 		vfsops->vfs_init =	vfs_stdinit;

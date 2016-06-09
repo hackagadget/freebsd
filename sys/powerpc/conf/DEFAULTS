@@ -13,3 +13,6 @@ options 	GEOM_PART_BSD
 options 	GEOM_PART_MBR
 
 options         NEW_PCIB
+
+# Enable network stack functionality
+options 	NETSTACK

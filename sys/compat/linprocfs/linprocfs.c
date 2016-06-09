@@ -1099,6 +1099,7 @@ linux_ifname(struct ifnet *ifp, char *buffer, size_t buflen)
 	return (0);
 }
 
+#ifdef NETSTACK
 /*
  * Filler function for proc/net/dev
  */
@@ -1152,6 +1153,7 @@ linprocfs_donetdev(PFS_FILL_ARGS)
 
 	return (0);
 }
+#endif /* NETSTACK */
 
 /*
  * Filler function for proc/sys/kernel/osrelease
@@ -1524,10 +1526,12 @@ linprocfs_init(PFS_INIT_ARGS)
 	pfs_create_file(root, "version", &linprocfs_doversion,
 	    NULL, NULL, NULL, PFS_RD);
 
+#ifdef NETSTACK
 	/* /proc/net/... */
 	dir = pfs_create_dir(root, "net", NULL, NULL, NULL, 0);
 	pfs_create_file(dir, "dev", &linprocfs_donetdev,
 	    NULL, NULL, NULL, PFS_RD);
+#endif /* NETSTACK */
 
 	/* /proc/<pid>/... */
 	dir = pfs_create_dir(root, "pid", NULL, NULL, NULL, PFS_PROCDEP);
