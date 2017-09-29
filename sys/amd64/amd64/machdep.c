@@ -147,8 +147,8 @@ CTASSERT(offsetof(struct pcpu, pc_curthread) == 0);
 
 extern u_int64_t hammer_time(u_int64_t, u_int64_t);
 
-#define	CS_SECURE(cs)		(ISPL(cs) == SEL_UPL)
-#define	EFL_SECURE(ef, oef)	((((ef) ^ (oef)) & ~PSL_USERCHANGE) == 0)
+#define	X86_CS_SECURE(cs)	(ISPL(cs) == SEL_UPL)
+#define	X86_EFL_SECURE(ef, oef)	((((ef) ^ (oef)) & ~PSL_USERCHANGE) == 0)
 
 static void cpu_startup(void *);
 static void get_fpcontext(struct thread *td, mcontext_t *mcp,
@@ -496,7 +496,7 @@ sys_sigreturn(td, uap)
 	/*
 	 * Don't allow users to change privileged or reserved flags.
 	 */
-	if (!EFL_SECURE(rflags, regs->tf_rflags)) {
+	if (!X86_EFL_SECURE(rflags, regs->tf_rflags)) {
 		uprintf("pid %d (%s): sigreturn rflags = 0x%lx\n", p->p_pid,
 		    td->td_name, rflags);
 		return (EINVAL);
@@ -508,7 +508,7 @@ sys_sigreturn(td, uap)
 	 * other selectors, invalid %eip's and invalid %esp's.
 	 */
 	cs = ucp->uc_mcontext.mc_cs;
-	if (!CS_SECURE(cs)) {
+	if (!X86_CS_SECURE(cs)) {
 		uprintf("pid %d (%s): sigreturn cs = 0x%x\n", p->p_pid,
 		    td->td_name, cs);
 		ksiginfo_init_trap(&ksi);
@@ -1973,7 +1973,8 @@ set_regs(struct thread *td, struct reg *regs)
 
 	tp = td->td_frame;
 	rflags = regs->r_rflags & 0xffffffff;
-	if (!EFL_SECURE(rflags, tp->tf_rflags) || !CS_SECURE(regs->r_cs))
+	if (!X86_EFL_SECURE(rflags, tp->tf_rflags) ||
+	    !X86_CS_SECURE(regs->r_cs))
 		return (EINVAL);
 	tp->tf_r15 = regs->r_r15;
 	tp->tf_r14 = regs->r_r14;
