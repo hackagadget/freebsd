@@ -31,6 +31,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include "opt_ddb.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 
@@ -42,6 +44,7 @@ __FBSDID("$FreeBSD$");
 #include <ddb/db_sym.h>
 #include <ddb/db_access.h>
 
+#ifndef DDB_SECURE
 static char	db_examine_format[TOK_STRING_SIZE] = "x";
 
 static void	db_examine(db_addr_t, char *, int);
@@ -232,6 +235,7 @@ db_print_cmd(db_expr_t addr, bool have_addr, db_expr_t count, char *modif)
 	}
 	db_printf("\n");
 }
+#endif /* !DDB_SECURE */
 
 void
 db_print_loc_and_inst(db_addr_t loc)
@@ -245,6 +249,7 @@ db_print_loc_and_inst(db_addr_t loc)
 	}
 }
 
+#ifndef DDB_SECURE
 /*
  * Search for a value in memory.
  * Syntax: search [/bhl] addr value [mask] [,count]
@@ -325,3 +330,4 @@ db_search(db_addr_t addr, int size, db_expr_t value, db_expr_t mask,
 	}
 	db_next = addr;
 }
+#endif /* !DDB_SECURE */

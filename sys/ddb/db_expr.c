@@ -31,6 +31,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include "opt_ddb.h"
+
 #include <sys/param.h>
 
 #include <ddb/ddb.h>
@@ -83,11 +85,13 @@ db_term(db_expr_t *valuep)
 	    *valuep = (db_expr_t)db_last_addr;
 	    return (true);
 	}
-	if (t == tDOLLAR) {
+#ifndef DDB_SECURE
+	if (t == tDOLLAR && !db_secure) {
 	    if (!db_get_variable(valuep))
 		return (false);
 	    return (true);
 	}
+#endif
 	if (t == tLPAREN) {
 	    if (!db_expression(valuep)) {
 		db_printf("Expression syntax error after '%c'\n", '(');

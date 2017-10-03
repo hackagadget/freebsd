@@ -31,6 +31,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include "opt_ddb.h"
+
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
@@ -152,6 +154,31 @@ db_delete_watchpoint(vm_map_t map, db_addr_t addr)
 	db_printf("Not set.\n");
 }
 
+void
+db_set_watchpoints(void)
+{
+	db_watchpoint_t	watch;
+
+	if (!db_watchpoints_inserted) {
+	    for (watch = db_watchpoint_list;
+	         watch != 0;
+	         watch = watch->link)
+		pmap_protect(watch->map->pmap,
+			     trunc_page(watch->loaddr),
+			     round_page(watch->hiaddr),
+			     VM_PROT_READ);
+
+	    db_watchpoints_inserted = true;
+	}
+}
+
+void
+db_clear_watchpoints(void)
+{
+	db_watchpoints_inserted = false;
+}
+
+#ifndef DDB_SECURE
 static void
 db_list_watchpoints(void)
 {
@@ -217,30 +244,6 @@ DB_SHOW_COMMAND(watches, db_listwatch_cmd)
 	db_md_list_watchpoints();
 }
 
-void
-db_set_watchpoints(void)
-{
-	db_watchpoint_t	watch;
-
-	if (!db_watchpoints_inserted) {
-	    for (watch = db_watchpoint_list;
-	         watch != 0;
-	         watch = watch->link)
-		pmap_protect(watch->map->pmap,
-			     trunc_page(watch->loaddr),
-			     round_page(watch->hiaddr),
-			     VM_PROT_READ);
-
-	    db_watchpoints_inserted = true;
-	}
-}
-
-void
-db_clear_watchpoints(void)
-{
-	db_watchpoints_inserted = false;
-}
-
 #ifdef notused
 static bool
 db_find_watchpoint(vm_map_t map, db_addr_t addr, db_regs_t regs)
@@ -275,8 +278,6 @@ db_find_watchpoint(vm_map_t map, db_addr_t addr, db_regs_t regs)
 }
 #endif
 
-
-
 /* Delete hardware watchpoint */
 /*ARGSUSED*/
 void
@@ -308,3 +309,4 @@ db_hwatchpoint_cmd(db_expr_t addr, bool have_addr, db_expr_t count,
 	if (rc < 0)
 		db_printf("hardware watchpoint could not be set\n");
 }
+#endif /* !DDB_SECURE */

@@ -35,6 +35,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include "opt_ddb.h"
+
 #include <sys/param.h>
 #include <sys/kdb.h>
 #include <sys/proc.h>
@@ -331,6 +333,7 @@ db_clear_single_step(void)
 
 extern int	db_cmd_loop_done;
 
+#ifndef DDB_SECURE
 /* single-step */
 /*ARGSUSED*/
 void
@@ -394,6 +397,7 @@ db_trace_until_matching_cmd(db_expr_t addr, bool have_addr, db_expr_t count,
 
 	db_cmd_loop_done = 1;
 }
+#endif /* !DDB_SECURE */
 
 /* continue */
 /*ARGSUSED*/

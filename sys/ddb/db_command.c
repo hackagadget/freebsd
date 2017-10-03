@@ -34,6 +34,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include "opt_ddb.h"
+
 #include <sys/param.h>
 #include <sys/linker_set.h>
 #include <sys/lock.h>
@@ -42,6 +44,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/proc.h>
 #include <sys/reboot.h>
 #include <sys/signalvar.h>
+#include <sys/sysctl.h>
 #include <sys/systm.h>
 #include <sys/cons.h>
 #include <sys/conf.h>
@@ -66,7 +69,9 @@ db_addr_t	db_prev;
 db_addr_t	db_next;
 
 static db_cmdfcn_t	db_dump;
+#ifndef DDB_SECURE
 static db_cmdfcn_t	db_fncall;
+#endif
 static db_cmdfcn_t	db_gdb;
 static db_cmdfcn_t	db_halt;
 static db_cmdfcn_t	db_kill;
@@ -102,30 +107,9 @@ static struct command db_show_cmds[] = {
 struct command_table db_show_table = LIST_HEAD_INITIALIZER(db_show_table);
 
 static struct command db_cmds[] = {
-	{ "print",	db_print_cmd,		0,	NULL },
-	{ "p",		db_print_cmd,		0,	NULL },
-	{ "examine",	db_examine_cmd,		CS_SET_DOT, NULL },
-	{ "x",		db_examine_cmd,		CS_SET_DOT, NULL },
-	{ "search",	db_search_cmd,		CS_OWN|CS_SET_DOT, NULL },
-	{ "set",	db_set_cmd,		CS_OWN,	NULL },
-	{ "write",	db_write_cmd,		CS_MORE|CS_SET_DOT, NULL },
-	{ "w",		db_write_cmd,		CS_MORE|CS_SET_DOT, NULL },
-	{ "delete",	db_delete_cmd,		0,	NULL },
-	{ "d",		db_delete_cmd,		0,	NULL },
-	{ "dump",	db_dump,		0,	NULL },
-	{ "break",	db_breakpoint_cmd,	0,	NULL },
-	{ "b",		db_breakpoint_cmd,	0,	NULL },
-	{ "dwatch",	db_deletewatch_cmd,	0,	NULL },
-	{ "watch",	db_watchpoint_cmd,	CS_MORE,NULL },
-	{ "dhwatch",	db_deletehwatch_cmd,	0,      NULL },
-	{ "hwatch",	db_hwatchpoint_cmd,	0,      NULL },
-	{ "step",	db_single_step_cmd,	0,	NULL },
-	{ "s",		db_single_step_cmd,	0,	NULL },
 	{ "continue",	db_continue_cmd,	0,	NULL },
 	{ "c",		db_continue_cmd,	0,	NULL },
-	{ "until",	db_trace_until_call_cmd,0,	NULL },
-	{ "next",	db_trace_until_matching_cmd,0,	NULL },
-	{ "match",	db_trace_until_matching_cmd,0,	NULL },
+	{ "dump",	db_dump,		0,	NULL },
 	{ "trace",	db_stack_trace,		CS_OWN,	NULL },
 	{ "t",		db_stack_trace,		CS_OWN,	NULL },
 	/* XXX alias for active trace */
@@ -134,7 +118,6 @@ static struct command db_cmds[] = {
 	{ "alltrace",	db_stack_trace_all,	0,	NULL },
 	{ "where",	db_stack_trace,		CS_OWN,	NULL },
 	{ "bt",		db_stack_trace,		CS_OWN,	NULL },
-	{ "call",	db_fncall,		CS_OWN,	NULL },
 	{ "show",	0,			0,	&db_show_table },
 	{ "ps",		db_ps,			0,	NULL },
 	{ "gdb",	db_gdb,			0,	NULL },
@@ -151,6 +134,33 @@ static struct command db_cmds[] = {
 	{ "capture",	db_capture_cmd,		CS_OWN,	NULL },
 	{ "textdump",	db_textdump_cmd,	CS_OWN, NULL },
 	{ "findstack",	db_findstack_cmd,	0,	NULL },
+#ifndef DDB_SECURE
+	{ "print",	db_print_cmd,		CS_SECURE,	NULL },
+	{ "p",		db_print_cmd,		CS_SECURE,	NULL },
+	{ "examine",	db_examine_cmd,		CS_SET_DOT|CS_SECURE, NULL },
+	{ "x",		db_examine_cmd,		CS_SET_DOT|CS_SECURE, NULL },
+	{ "search",	db_search_cmd,		CS_OWN|CS_SET_DOT|CS_SECURE,
+								NULL },
+	{ "set",	db_set_cmd,		CS_OWN|CS_SECURE, NULL },
+	{ "write",	db_write_cmd,		CS_MORE|CS_SET_DOT|CS_SECURE,
+								NULL },
+	{ "w",		db_write_cmd,		CS_MORE|CS_SET_DOT|CS_SECURE,
+								NULL },
+	{ "delete",	db_delete_cmd,		CS_SECURE,	NULL },
+	{ "d",		db_delete_cmd,		CS_SECURE,	NULL },
+	{ "break",	db_breakpoint_cmd,	CS_SECURE,	NULL },
+	{ "b",		db_breakpoint_cmd,	CS_SECURE,	NULL },
+	{ "dwatch",	db_deletewatch_cmd,	CS_SECURE,	NULL },
+	{ "watch",	db_watchpoint_cmd,	CS_MORE|CS_SECURE, NULL },
+	{ "dhwatch",	db_deletehwatch_cmd,	CS_SECURE,      NULL },
+	{ "hwatch",	db_hwatchpoint_cmd,	CS_SECURE,      NULL },
+	{ "step",	db_single_step_cmd,	CS_SECURE,	NULL },
+	{ "s",		db_single_step_cmd,	CS_SECURE,	NULL },
+	{ "until",	db_trace_until_call_cmd,CS_SECURE,	NULL },
+	{ "next",	db_trace_until_matching_cmd,CS_SECURE,	NULL },
+	{ "match",	db_trace_until_matching_cmd,CS_SECURE,	NULL },
+	{ "call",	db_fncall,		CS_OWN|CS_SECURE, NULL },
+#endif
 };
 struct command_table db_cmd_table = LIST_HEAD_INITIALIZER(db_cmd_table);
 
@@ -162,6 +172,39 @@ static struct command	*db_last_command = NULL;
  * Otherwise: 'dot' points to next item, '..' points to last.
  */
 static bool	db_ed_style = true;
+
+/*
+ * DDB secure mode
+ */
+#ifdef DDB_SECURE
+bool	db_secure = true;
+SYSCTL_BOOL(_debug_ddb, OID_AUTO, secure, CTLFLAG_RD, &db_secure, 0,
+    "DDB secure mode");
+#else /* !DDB_SECURE */
+bool	db_secure;
+
+static int
+sysctl_debug_ddb_secure(SYSCTL_HANDLER_ARGS)
+{
+	bool sec;
+	int error;
+
+	sec = db_secure;
+	error = sysctl_handle_bool(oidp, &sec, 0, req);
+	if (error || !req->newptr )
+		return (error);
+
+	if (db_secure && !sec)
+		return (EPERM);
+
+	db_secure = sec;
+	return (0);
+}
+
+SYSCTL_PROC(_debug_ddb, OID_AUTO, secure,
+    CTLTYPE_U8 | CTLFLAG_MPSAFE | CTLFLAG_RWTUN, NULL, 0,
+    sysctl_debug_ddb_secure, "CU", "DDB secure mode");
+#endif /* !DDB_SECURE */
 
 /*
  * Utility routine - discard tokens through end-of-line.
@@ -368,7 +411,12 @@ db_command(struct command **last_cmdp, struct command_table *cmd_table,
 	    modif[0] = '\0';
 	}
 	else if (t == tEXCL) {
+#ifdef DDB_SECURE
+	    db_printf("Bad character\n");
+	    db_flush_lex();
+#else
 	    db_fncall((db_expr_t)0, (bool)false, (db_expr_t)0, (char *)0);
+#endif
 	    return;
 	}
 	else if (t != tIDENT) {
@@ -419,6 +467,12 @@ db_command(struct command **last_cmdp, struct command_table *cmd_table,
 			return;
 		    }
 		}
+	    }
+
+	    if (db_secure && (cmd->flag & CS_SECURE) != 0) {
+		db_printf("Not allowed in secure mode\n");
+		db_flush_lex();
+		return;
 	    }
 
 	    if ((cmd->flag & CS_OWN) == 0) {
@@ -586,6 +640,7 @@ db_dump(db_expr_t dummy, bool dummy2, db_expr_t dummy3, char *dummy4)
 	}
 }
 
+#ifndef DDB_SECURE
 /*
  * Call random function:
  * !expr(arg,arg,arg)
@@ -655,6 +710,7 @@ db_fncall(db_expr_t dummy1, bool dummy2, db_expr_t dummy3, char *dummy4)
 	if (DB_CALL(fn_addr, &retval, nargs, args))
 		db_printf("= %#lr\n", (long)retval);
 }
+#endif /* !DDB_SECURE */
 
 static void
 db_halt(db_expr_t dummy, bool dummy2, db_expr_t dummy3, char *dummy4)

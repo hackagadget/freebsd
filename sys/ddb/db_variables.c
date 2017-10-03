@@ -38,6 +38,7 @@ __FBSDID("$FreeBSD$");
 #include <ddb/db_lex.h>
 #include <ddb/db_variables.h>
 
+#ifndef DDB_SECURE
 static int	db_find_variable(struct db_variable **varp);
 
 static struct db_variable db_vars[] = {
@@ -101,6 +102,7 @@ db_set_variable(db_expr_t value)
 
 	return (db_write_variable(vp, value));
 }
+#endif /* !DDB_SECURE */
 
 int
 db_read_variable(struct db_variable *vp, db_expr_t *valuep)
@@ -114,6 +116,7 @@ db_read_variable(struct db_variable *vp, db_expr_t *valuep)
 	return ((*func)(vp, valuep, DB_VAR_GET));
 }
 
+#ifndef DDB_SECURE
 int
 db_write_variable(struct db_variable *vp, db_expr_t value)
 {
@@ -156,3 +159,4 @@ db_set_cmd(db_expr_t dummy1, bool dummy2, db_expr_t dummy3, char *dummy4)
 
 	db_write_variable(vp, value);
 }
+#endif /* !DDB_SECURE */

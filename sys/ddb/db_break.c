@@ -264,6 +264,7 @@ db_list_breakpoints(void)
 	}
 }
 
+#ifndef DDB_SECURE
 /* Delete breakpoint */
 /*ARGSUSED*/
 void
@@ -289,6 +290,7 @@ db_listbreak_cmd(db_expr_t dummy1, bool dummy2, db_expr_t dummy3, char *dummy4)
 {
 	db_list_breakpoints();
 }
+#endif /* !DDB_SECURE*/
 
 /*
  *	We want ddb to be usable before most of the kernel has been

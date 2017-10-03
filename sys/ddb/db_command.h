@@ -53,5 +53,6 @@ extern db_addr_t	db_prev;	/* last address examined
 					   or written */
 extern db_addr_t	db_next;	/* next address to be examined
 					   or written */
+extern bool		db_secure;	/* secure mode enabled (or not) */
 
 #endif /* !_DDB_DB_COMMAND_H_ */
